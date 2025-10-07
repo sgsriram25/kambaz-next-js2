@@ -8,7 +8,7 @@ export default function LabsLayout({
     <table>
       <tbody>
         <tr>
-          <td valign="top" width="100px">   ``
+          <td valign="top" width="100px">
             <TOC />
           </td>
           <td valign="top">{children}</td>
