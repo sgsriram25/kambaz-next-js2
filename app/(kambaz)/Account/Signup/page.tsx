@@ -6,15 +6,15 @@ export default function Signup() {
       <h3>Sign up</h3>
      <FormControl id="wd-username"
              placeholder="username"
-             defaultValue={"sriram"}
+             defaultValue={"Sriram_10"}
              className="mb-2"/>
         <FormControl id="wd-password"
              placeholder="password" type="password"
-             defaultValue={"sriram"}
+             defaultValue={"sriram123"}
              className="mb-2"/>
         <FormControl id="wd-confirm-password"
              placeholder="confirm password" type="password"
-             defaultValue={"sriram"}
+             defaultValue={"sriram123"}
              className="mb-2"/>             
 
       <Link id="wd-signin-btn"

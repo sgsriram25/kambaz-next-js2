@@ -1,7 +1,6 @@
-export default function Piazza() {
-    return (
-      <div id="wd-piazza">
-        <h1>Zoom</h1>
-      </div>
-    );
-  }
+  import { redirect } from "next/navigation";
+  export default function Zoom() {
+      redirect("https://zoom.com");
+      
+    }
+  

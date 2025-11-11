@@ -1,6 +1,6 @@
-export default function Piazza() {
+export default function Quizzes() {
     return (
-      <div id="wd-piazza">
+      <div id="wd-quizzes">
         <h1>Quizzes</h1>
       </div>
     );
