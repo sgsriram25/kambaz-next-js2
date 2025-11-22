@@ -1,5 +1,5 @@
 "use client";
-import { v4 as uuidv4 } from "uuid";
+import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import * as client from "../../client";
 import { FormControl, ListGroup, ListGroupItem } from "react-bootstrap";
@@ -7,8 +7,7 @@ import ModulesControls from "./ModulesControls";
 import { BsGripVertical } from "react-icons/bs";
 import ModulesControlButtons from "./ModulesControlButtons";
 import LessonControlButtons from "./LessonControlButtons";
-import { useState, useEffect } from "react";
-import { setModules, addModule, editModule, updateModule, deleteModule } from "./reducer";
+import { setModules, updateModule, deleteModule } from "./reducer";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "../../../store";
 
@@ -16,10 +15,10 @@ export default function Modules() {
   const { cid } = useParams();
   const [moduleName, setModuleName] = useState("");
   const { modules } = useSelector((state: RootState) => state.modulesReducer);
-  const { currentUser } = useSelector((state: RootState) => state.accountReducer);  // Access current user
+  const { currentUser } = useSelector((state: RootState) => state.accountReducer); // Access current user
   const dispatch = useDispatch();
 
-  // Check if the user is faculty
+  // Check if the current user is faculty
   const isFaculty = (currentUser as any)?.role === "FACULTY";
 
   const onUpdateModule = async (module: any) => {
@@ -51,11 +50,14 @@ export default function Modules() {
 
   return (
     <div>
-      {/* Display module controls only for faculty */}
+      {/* Only render the create module controls if the user is faculty */}
       {isFaculty && (
-        <ModulesControls setModuleName={setModuleName} moduleName={moduleName} addModule={onCreateModuleForCourse} />
+        <ModulesControls
+          setModuleName={setModuleName}
+          moduleName={moduleName}
+          addModule={onCreateModuleForCourse}
+        />
       )}
-      
       <br />
       <br />
       <br />
@@ -69,7 +71,9 @@ export default function Modules() {
               {module.editing && (
                 <FormControl
                   className="w-50 d-inline-block"
-                  onChange={(e) => dispatch(updateModule({ ...module, name: e.target.value }))}
+                  onChange={(e) =>
+                    dispatch(updateModule({ ...module, name: e.target.value }))
+                  }
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       onUpdateModule({ ...module, editing: false });
@@ -79,7 +83,7 @@ export default function Modules() {
                 />
               )}
 
-              {/* Show edit and delete buttons only for faculty */}
+              {/* Render edit and delete buttons only if the user is faculty */}
               {isFaculty && (
                 <ModulesControlButtons
                   moduleId={module._id}
