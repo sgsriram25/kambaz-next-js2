@@ -1,4 +1,7 @@
-"use client";
+/* eslint-disable @next/next/no-assign-module-variable */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable react/jsx-key */
+"use client"
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import * as client from "../../client";
@@ -7,7 +10,7 @@ import ModulesControls from "./ModulesControls";
 import { BsGripVertical } from "react-icons/bs";
 import ModulesControlButtons from "./ModulesControlButtons";
 import LessonControlButtons from "./LessonControlButtons";
-import { setModules, updateModule, deleteModule } from "./reducer";
+import { setModules, updateModule, editModule, addModule, deleteModule } from "./reducer";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "../../../store";
 
@@ -18,7 +21,7 @@ export default function Modules() {
   const { currentUser } = useSelector((state: RootState) => state.accountReducer); // Access current user
   const dispatch = useDispatch();
 
-  // Check if the current user is faculty
+  // Check if the current user is a faculty
   const isFaculty = (currentUser as any)?.role === "FACULTY";
 
   const onUpdateModule = async (module: any) => {
@@ -50,7 +53,7 @@ export default function Modules() {
 
   return (
     <div>
-      {/* Only render the create module controls if the user is faculty */}
+      {/* Only display module creation controls for faculty */}
       {isFaculty && (
         <ModulesControls
           setModuleName={setModuleName}
