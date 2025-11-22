@@ -49,8 +49,7 @@ export default function TOC() {
         </NavLink>
       </NavItem>
 
-
-       <NavItem>
+      <NavItem>
         <NavLink
           href="/Labs/Lab4"
           as={Link}
@@ -69,6 +68,10 @@ export default function TOC() {
           Lab 5
         </NavLink>
       </NavItem>
+
+
+
+      
 
       <NavItem>
         <NavLink
