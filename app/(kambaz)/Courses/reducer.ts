@@ -1,9 +1,22 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { createSlice } from "@reduxjs/toolkit";
-import { courses } from "../Database";
-const initialState = {
- courses: courses,
+//import { courses } from "../Database";
+
+export type Course = {
+  _id: string;
+  name: string;
+  number: string;
+  startDate: string;
+  endDate: string;
+  img: string;
+  description: string;
 };
+
+const initialState: { courses: Course[] } = {
+  courses: [],
+};
+
+
 const coursesSlice = createSlice({
  name: "courses",
  initialState,
