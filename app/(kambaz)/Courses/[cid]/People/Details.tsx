@@ -9,7 +9,7 @@ import { FaCheck, FaUserCircle } from "react-icons/fa";
 import { Button, FormControl, Form } from "react-bootstrap";
 import * as client from "../../../Account/client";
 
-export default function PeopleDetails({ uid, onClose, onEdit }: { uid: string | null; onClose: () => void; onEdit?: (user: any) => void; }) {
+export default function PeopleDetails({ uid, onClose, onEdit, onDelete, onUpdate }: { uid: string | null; onClose: () => void; onEdit?: (user: any) => void; onDelete?: () => void; onUpdate?: () => void; }) {
   const [user, setUser] = useState<any>({});
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -22,11 +22,17 @@ export default function PeopleDetails({ uid, onClose, onEdit }: { uid: string | 
     await client.updateUser(updatedUser);
     setUser(updatedUser);
     setEditing(false);
+    if (onUpdate) {
+      onUpdate();
+    }
     onClose();
   };
 
     const deleteUser = async (uid: string) => {
     await client.deleteUser(uid);
+    if (onDelete) {
+      onDelete();
+    }
     onClose();
   };
 
