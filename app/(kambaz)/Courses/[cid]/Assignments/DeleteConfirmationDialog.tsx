@@ -1,30 +1,25 @@
 "use client";
-
 import { Modal, Button } from "react-bootstrap";
-
-interface DeleteConfirmationDialogProps {
-  show: boolean;
-  handleClose: () => void;
-  assignmentTitle: string;
-  onConfirm: () => void;
-}
 
 export default function DeleteConfirmationDialog({
   show,
   handleClose,
   assignmentTitle,
   onConfirm,
-}: DeleteConfirmationDialogProps) {
+}: {
+  show: boolean;
+  handleClose: () => void;
+  assignmentTitle: string;
+  onConfirm: () => void;
+}) {
   return (
     <Modal show={show} onHide={handleClose} centered>
       <Modal.Header closeButton>
-        <Modal.Title>Confirm Deletion</Modal.Title>
+        <Modal.Title>Confirm Delete</Modal.Title>
       </Modal.Header>
-
       <Modal.Body>
-        Are you sure you want to delete <strong>{assignmentTitle}</strong>?
+        Are you sure you want to remove &quot;{assignmentTitle}&quot;? This action cannot be undone.
       </Modal.Body>
-
       <Modal.Footer>
         <Button variant="secondary" onClick={handleClose}>
           Cancel
@@ -33,10 +28,10 @@ export default function DeleteConfirmationDialog({
           variant="danger"
           onClick={() => {
             onConfirm();
-            handleClose(); 
+            handleClose();
           }}
         >
-          Delete
+          Yes, Delete
         </Button>
       </Modal.Footer>
     </Modal>

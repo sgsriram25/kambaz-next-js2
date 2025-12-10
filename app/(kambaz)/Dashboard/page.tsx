@@ -1,12 +1,11 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable react/jsx-key */
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { CardImg, CardText, CardTitle, Row, Col, Button, Card, CardBody, FormControl} from "react-bootstrap";
 import { useDispatch, useSelector } from "react-redux";
-import { addNewCourse, deleteCourse, updateCourse, setCourses } from "../Courses/reducer";
-import { addEnrollment, removeEnrollment, setEnrollments } from "../Enrollments/reducer";
+import { setCourses } from "../Courses/reducer";
+import { setEnrollments } from "../Enrollments/reducer";
 import { RootState } from "../store";
 import { useRouter } from "next/navigation";
 import * as client from "../Courses/client";
@@ -17,11 +16,10 @@ export default function Dashboard() {
   const { enrollments } = useSelector((state: RootState) => state.enrollmentsReducer);
   const dispatch = useDispatch();
   const router = useRouter();
-  const userId = (currentUser as any)?._id;
-  const isFaculty = (currentUser as any)?.role === "FACULTY";
   
   const [showAllCourses, setShowAllCourses] = useState(false);
   const [formKey, setFormKey] = useState(0);
+  const [allCoursesList, setAllCoursesList] = useState<any[]>([]);
   const [course, setCourse] = useState<any>({
     _id: "0", 
     name: "New Course", 
@@ -31,42 +29,35 @@ export default function Dashboard() {
     img: "/images/reactjs.jpg", 
     description: "New Description"
   });
-  const onAddNewCourse = async () => {
-    const newCourse = await client.createCourse(course);
-    dispatch(setCourses([ ...courses, newCourse ]));
-    if (currentUser && newCourse?._id) {
-      await client.enrollUserInCourse(newCourse._id);
-
-      // 4. Refresh enrollments list
-      await fetchEnrollments();
+  const fetchMyCourses = useCallback(async () => {
+    try {
+      if (currentUser) {
+        const myCourses = await client.findMyCourses();
+        const uniqueCourses = Array.from(
+          new Map(myCourses.map((course: any) => [course._id, course])).values()
+        );
+        dispatch(setCourses(uniqueCourses));
+      }
+    } catch (error: any) {
+      if (error?.response?.status !== 401) {
+      }
+      dispatch(setCourses([]));
     }
+  }, [currentUser, dispatch]);
 
-    setCourse({
-      _id: "0", 
-      name: "New Course", 
-      number: "New Number",
-      startDate: "2023-09-10", 
-      endDate: "2023-12-15",
-      img: "/images/reactjs.jpg", 
-      description: "New Description"
-    });
-    setFormKey(prev => prev + 1);
-    if (currentUser) {
-      fetchEnrollments();
-    }
-  };
-
-
-  const fetchCourses = async () => {
+  const fetchAllCourses = useCallback(async () => {
     try {
       const allCourses = await client.fetchAllCourses();
-      dispatch(setCourses(allCourses));
-    } catch (error) {
-      console.error(error);
+      const uniqueCourses = Array.from(
+        new Map(allCourses.map((course: any) => [course._id, course])).values()
+      );
+      return uniqueCourses;
+    } catch {
+      return [];
     }
-  };
+  }, []);
 
-  const fetchEnrollments = async () => {
+  const fetchEnrollments = useCallback(async () => {
     try {
       if (currentUser) {
         const enrollments = await client.findEnrollmentsForUser();
@@ -79,19 +70,49 @@ export default function Dashboard() {
       }
     } catch (error: any) {
       if (error?.response?.status !== 401) {
-        console.error(error);
       }
       dispatch(setEnrollments([]));
     }
-  };
+  }, [currentUser, dispatch]);
 
   useEffect(() => {
-    fetchCourses();
-    if (currentUser) {
-      fetchEnrollments();
+    if (!currentUser) {
+      router.push("/Account/Signin");
+      return;
     }
-  }, [currentUser]);
+    fetchMyCourses();
+    fetchEnrollments();
+    fetchAllCourses().then(setAllCoursesList);
+  }, [currentUser, router, fetchMyCourses, fetchEnrollments, fetchAllCourses]);
 
+  if (!currentUser) {
+    return null;
+  }
+
+  const userId = (currentUser as any)?._id;
+  const isFaculty = (currentUser as any)?.role === "FACULTY";
+
+  const onAddNewCourse = async () => {
+    try {
+      await client.createCourse(course);
+      await fetchMyCourses();
+      await fetchEnrollments();
+      const updatedAllCourses = await fetchAllCourses();
+      setAllCoursesList(updatedAllCourses);
+      setCourse({
+        _id: "0", 
+        name: "New Course", 
+        number: "New Number",
+        startDate: "2023-09-10", 
+        endDate: "2023-12-15",
+        img: "/images/reactjs.jpg", 
+        description: "New Description"
+      });
+      setFormKey(prev => prev + 1);
+    } catch {
+      alert("Failed to create course. Please try again.");
+    }
+  };
 
   const isEnrolled = (courseId: string) => {
     if (!userId || !courseId) return false;
@@ -100,15 +121,12 @@ export default function Dashboard() {
     );
   };
 
-  const filteredCourses = showAllCourses
-    ? courses
-    : courses.filter((course: any) => isEnrolled(course._id));
+  const filteredCourses = showAllCourses ? allCoursesList : courses;
 
   const handleEnrollment = async (courseId: string, event: any) => {
     event.preventDefault();
     event.stopPropagation();
     if (!userId || !courseId) {
-      console.error("Missing userId or courseId");
       return;
     }
     try {
@@ -118,38 +136,36 @@ export default function Dashboard() {
         await client.enrollUserInCourse(courseId);
       }
       await fetchEnrollments();
-    } catch (error: any) {
-      console.error("Error handling enrollment:", error);
+      await fetchMyCourses();
+    } catch {
       await fetchEnrollments();
+      await fetchMyCourses();
     }
   };
 
-  const handleCourseClick = (courseId: string, event: any) => {
-    if (!isEnrolled(courseId)) {
-      event.preventDefault();
-      return;
-    }
-    router.push(`/Courses/${courseId}/Home`);
-  };
 
   const onDeleteCourse = async (courseId: string) => {
     try {
-      await client.deleteCourse(courseId);
-      await fetchCourses();
-      if (currentUser) {
-        await fetchEnrollments();
+      const response = await client.deleteCourse(courseId);
+      if (response) {
+        await fetchMyCourses();
+        const updatedAllCourses = await fetchAllCourses();
+        setAllCoursesList(updatedAllCourses);
+        if (currentUser) {
+          await fetchEnrollments();
+        }
       }
-    } catch (error) {
-      console.error("Error deleting course:", error);
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.error || error?.message || "Failed to delete course";
+      alert(errorMessage);
     }
   };
 
   const onUpdateCourse = async () => {
     await client.updateCourse(course);
-    dispatch(setCourses(courses.map((c) => {
-        if (c._id === course._id) { return course; }
-        else { return c; }
-    })));
+    await fetchMyCourses();
+    const updatedAllCourses = await fetchAllCourses();
+    setAllCoursesList(updatedAllCourses);
     setCourse({
       _id: "0", 
       name: "New Course", 
@@ -166,13 +182,21 @@ export default function Dashboard() {
     <div id="wd-dashboard">
       <div className="d-flex justify-content-between align-items-center">
         <h1 id="wd-dashboard-title">Dashboard</h1>
-        <Button
-          variant="primary"
-          onClick={() => setShowAllCourses(!showAllCourses)}
-          id="wd-enrollments-button"
-        >
-          {showAllCourses ? "Show Enrolled" : "Enrollments"}
-        </Button>
+        {!isFaculty && (
+          <Button
+            variant="primary"
+            onClick={async () => {
+              if (!showAllCourses) {
+                const allCourses = await fetchAllCourses();
+                setAllCoursesList(allCourses);
+              }
+              setShowAllCourses(!showAllCourses);
+            }}
+            id="wd-enrollments-button"
+          >
+            {showAllCourses ? "Show Enrolled" : "Enrollments"}
+          </Button>
+        )}
       </div>
       <hr />
       {isFaculty && (
@@ -191,24 +215,30 @@ export default function Dashboard() {
         </>
       )} 
       <h2 id="wd-dashboard-published">
-        {showAllCourses ? "All Courses" : "Published Courses"} ({filteredCourses.length})
+        {showAllCourses 
+          ? "All Courses" 
+          : (isFaculty ? "My Courses" : "Enrolled Courses")} ({filteredCourses.length})
       </h2> 
       <hr />
       <div id="wd-dashboard-courses">
         <Row xs={1} md={5} className="g-4">
           {filteredCourses.map((course: any) => {
             const enrolled = isEnrolled(course._id);
+            const canAccessCourse = isFaculty ? true : enrolled;
+            
             return (
               <Col key={course._id} className="wd-dashboard-course" style={{ width: "300px" }}>
                 <Card>
                   <Link 
-                    href={enrolled && !showAllCourses ? `/Courses/${course._id}/Home` : "#"}
+                    href={canAccessCourse && !showAllCourses ? `/Courses/${course._id}/Home` : "#"}
                     onClick={(e) => {
                       if (showAllCourses || e.target instanceof HTMLButtonElement || (e.target as HTMLElement).closest('button')) {
                         e.preventDefault();
                         return;
                       }
-                      handleCourseClick(course._id, e);
+                      if (canAccessCourse && !showAllCourses) {
+                        router.push(`/Courses/${course._id}/Home`);
+                      }
                     }}
                     className="wd-dashboard-course-link text-decoration-none text-dark"
                   >
@@ -234,7 +264,7 @@ export default function Dashboard() {
                           </Button>
                         ) : (
                           <>
-                            {enrolled ? (
+                            {canAccessCourse ? (
                               <Button 
                                 variant="primary"
                                 onClick={(e) => {
