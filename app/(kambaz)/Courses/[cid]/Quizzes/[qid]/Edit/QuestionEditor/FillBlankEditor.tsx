@@ -141,7 +141,7 @@ export default function FillBlankEditor({
         </Form.Group>
 
         <Form.Group className="mb-3">
-          <Form.Label>Question</Form.Label>
+          <Form.Label>Description</Form.Label>
           <Form.Control
             as="textarea"
             rows={3}

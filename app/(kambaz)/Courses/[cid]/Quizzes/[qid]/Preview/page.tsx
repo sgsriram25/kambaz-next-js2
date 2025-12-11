@@ -46,9 +46,14 @@ export default function QuizPreview() {
   const questions = quiz.questions || [];
   const oneQuestionAtATime = quiz.oneQuestionAtATime !== false;
 
-  const handleAnswerChange = (questionId: string, answer: any) => {
-    setAnswers({ ...answers, [questionId]: answer });
-  };
+const handleAnswerChange = (questionId: string, answer: any, type?: string) => {
+  // Store answers using the same format as the Take page:
+  // - Multiple choice: choice text (string)
+  // - True/False: boolean
+  // - Fill blank: string or string[]
+  let normalizedAnswer = answer;
+  setAnswers({ ...answers, [questionId]: normalizedAnswer });
+};
 
   const checkFillBlankAnswer = (question: any, userAnswers: any) => {
       if (!question.blanks || question.blanks.length === 0) {
@@ -88,16 +93,28 @@ export default function QuizPreview() {
     return { correct: allCorrect, points: totalPoints };
   };
 
-  const checkAnswer = (question: any, answer: any): boolean => {
-    if (question.type === "MULTIPLE_CHOICE") {
-      return answer === question.correctChoice;
-    } else if (question.type === "TRUE_FALSE") {
+const checkAnswer = (question: any, answer: any): boolean => {
+  if (question.type === "MULTIPLE_CHOICE") {
+    // Support both formats: `correctAnswer` (choice text) and `correctChoice` (index)
+    if (question.correctAnswer !== undefined) {
       return answer === question.correctAnswer;
-    } else if (question.type === "FILL_BLANK") {
-      return checkFillBlankAnswer(question, answer).correct;
+    }
+    if (question.correctChoice !== undefined) {
+      // answer might be stored as index or as the choice text
+      if (typeof answer === "number") {
+        return Number(answer) === Number(question.correctChoice);
+      }
+      return answer === question.choices?.[Number(question.correctChoice)];
     }
     return false;
-  };
+  } else if (question.type === "TRUE_FALSE") {
+    const correct = question.correctAnswer === true || question.correctAnswer === "true";
+    return answer === correct;
+  } else if (question.type === "FILL_BLANK") {
+    return checkFillBlankAnswer(question, answer).correct;
+  }
+  return false;
+};
 
   const calculateScore = () => {
     let totalScore = 0;
@@ -164,9 +181,11 @@ export default function QuizPreview() {
           {question.type === "MULTIPLE_CHOICE" && (
             <div>
               {question.choices?.map((choice: string, choiceIndex: number) => {
-                const isSelected = answers[question._id] === choiceIndex;
-                const isCorrectChoice = choiceIndex === question.correctChoice;
-                
+                const isSelected = answers[question._id] === choice;
+                const isCorrectChoice = question.correctAnswer !== undefined
+                  ? question.correctAnswer === choice
+                  : (question.correctChoice !== undefined ? Number(question.correctChoice) === choiceIndex : false);
+
                 return (
                   <Form.Check
                     key={choiceIndex}
@@ -175,7 +194,7 @@ export default function QuizPreview() {
                     id={`question-${question._id}-choice-${choiceIndex}`}
                     label={choice}
                     checked={isSelected}
-                    onChange={() => handleAnswerChange(question._id, choiceIndex)}
+                    onChange={() => handleAnswerChange(question._id, choice, "MULTIPLE_CHOICE")}
                     disabled={showResults}
                     className={`mb-2 ${
                       showResults
@@ -193,45 +212,38 @@ export default function QuizPreview() {
           )}
 
           {question.type === "TRUE_FALSE" && (
-            <div>
-              <Form.Check
-                type="radio"
-                name={`question-${question._id}`}
-                id={`question-${question._id}-true`}
-                label="True"
-                checked={answers[question._id] === true}
-                onChange={() => handleAnswerChange(question._id, true)}
-                disabled={showResults}
-                className={`mb-2 ${
-                  showResults
-                    ? question.correctAnswer === true
-                      ? "text-success fw-bold"
-                      : answers[question._id] === true
-                      ? "text-danger"
-                      : ""
-                    : ""
-                }`}
-              />
-              <Form.Check
-                type="radio"
-                name={`question-${question._id}`}
-                id={`question-${question._id}-false`}
-                label="False"
-                checked={answers[question._id] === false}
-                onChange={() => handleAnswerChange(question._id, false)}
-                disabled={showResults}
-                className={`mb-2 ${
-                  showResults
-                    ? question.correctAnswer === false
-                      ? "text-success fw-bold"
-                      : answers[question._id] === false
-                      ? "text-danger"
-                      : ""
-                    : ""
-                }`}
-              />
-            </div>
-          )}
+  <div>
+    {[true, false].map((val) => {
+      const isCorrect =
+        question.correctAnswer === val || question.correctAnswer === String(val);
+      const isSelected = answers[question._id] === val;
+
+      let className = "mb-2";
+      if (showResults) {
+        if (isCorrect) {
+          className += " text-success fw-bold"; // always green for correct
+        } else if (isSelected && !isCorrect) {
+          className += " text-danger"; // only red if user selected wrong
+        }
+      }
+
+      return (
+        <Form.Check
+          key={val.toString()}
+          type="radio"
+          name={`question-${question._id}`}
+          id={`question-${question._id}-${val}`}
+          label={val ? "True" : "False"}
+          checked={isSelected}
+          onChange={() => handleAnswerChange(question._id, val)}
+          disabled={showResults}
+          className={className}
+        />
+      );
+    })}
+  </div>
+)}
+
 
           {question.type === "FILL_BLANK" && (
             <div>

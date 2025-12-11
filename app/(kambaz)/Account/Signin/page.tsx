@@ -99,8 +99,10 @@ export default function Signin() {
       </Button>
 
       <Link id="wd-signup-link" href="/Account/Signup">Sign up</Link>
-      
-      
+      <hr />
+      <h3> Sri Ram Sathiya Naryanan | 002025393 | CS 5160 </h3>
+    <a href ="https://github.com/sgsriram25/kambaz-next-js2" id="wd-github"> Kambaz Github Repo</a> <br />
+    <a href ="https://github.com/sgsriram25/kambaz-node-server-app" id="wd-github"> Server Github Repo</a>
     </div>
   );
 }

@@ -14,6 +14,8 @@ import { FaRocket } from "react-icons/fa";
 import QuizControlButtons from "./QuizControlButtons";
 import QuizLessonControlButtons from "./QuizLessonControlButtons";
 import DeleteConfirmationDialog from "../Assignments/DeleteConfirmationDialog";
+import "./quiz.css";
+
 
 export default function Quizzes() {
   const { cid } = useParams();

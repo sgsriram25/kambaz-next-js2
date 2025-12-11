@@ -161,22 +161,40 @@ export default function Dashboard() {
     }
   };
 
-  const onUpdateCourse = async () => {
+const onUpdateCourse = async () => {
+  if (!course._id || course._id === "0") {
+    alert("Please select a valid course to update.");
+    return;
+  }
+
+  try {
+    console.log("Updating course:", course);
     await client.updateCourse(course);
+
+    // Refresh lists
     await fetchMyCourses();
     const updatedAllCourses = await fetchAllCourses();
     setAllCoursesList(updatedAllCourses);
+
+    // Reset form
     setCourse({
-      _id: "0", 
-      name: "New Course", 
+      _id: "0",
+      name: "New Course",
       number: "New Number",
-      startDate: "2023-09-10", 
+      startDate: "2023-09-10",
       endDate: "2023-12-15",
-      img: "/images/reactjs.jpg", 
+      img: "/images/reactjs.jpg",
       description: "New Description"
     });
     setFormKey(prev => prev + 1);
-  };
+
+    alert("Course updated successfully!");
+  } catch (err: any) {
+    const errorMessage = err?.response?.data?.error || err?.message || "Failed to update course";
+    alert(errorMessage);
+  }
+};
+
 
   return (
     <div id="wd-dashboard">
@@ -197,23 +215,96 @@ export default function Dashboard() {
             {showAllCourses ? "Show Enrolled" : "Enrollments"}
           </Button>
         )}
+
+        {isFaculty && (
+          <Button
+  variant="primary"
+  onClick={async () => {
+    if (!showAllCourses) {
+      const allCourses = await fetchAllCourses();
+      setAllCoursesList(allCourses);
+    }
+    setShowAllCourses(!showAllCourses);
+  }}
+  id="wd-enrollments-button"
+>
+  {showAllCourses ? "Show My Courses" : isFaculty ? "All Courses" : "Enrollments"}
+</Button>
+
+        )}
       </div>
       <hr />
       {isFaculty && (
-        <>
-          <h5>New Course
-              <button className="btn btn-primary float-end"
-                      id="wd-add-new-course-click"
-                      onClick={onAddNewCourse}> Add </button>
-                              <button className="btn btn-warning float-end me-2"
-                    onClick={onUpdateCourse} id="wd-update-course-click">
-              Update </button>
-          </h5><br />
-          <FormControl key={`name-${formKey}`} value={course.name} className="mb-2" onChange={(e) => setCourse({ ...course, name: e.target.value }) } />
-          <FormControl key={`description-${formKey}`} as="textarea" value={course.description} rows={3} onChange={(e) => setCourse({ ...course, description: e.target.value }) } />
-          <hr />
-        </>
-      )} 
+  <>
+    <h5>
+      {course._id === "0" ? "New Course" : "Edit Course"}
+      <button
+        className="btn btn-primary float-end ms-2"
+        onClick={onAddNewCourse}
+        id="wd-add-new-course-click"
+      >
+        Add
+      </button>
+      {course._id !== "0" && (
+        <button
+          className="btn btn-warning float-end"
+          onClick={onUpdateCourse}
+          id="wd-update-course-click"
+        >
+          Update
+        </button>
+      )}
+    </h5>
+    <br />
+    <FormControl
+      key={`name-${formKey}`}
+      placeholder="Course Name"
+      value={course.name}
+      className="mb-2"
+      onChange={(e) => setCourse({ ...course, name: e.target.value })}
+    />
+    <FormControl
+      key={`number-${formKey}`}
+      placeholder="Course Number"
+      value={course.number}
+      className="mb-2"
+      onChange={(e) => setCourse({ ...course, number: e.target.value })}
+    />
+    <FormControl
+      key={`description-${formKey}`}
+      as="textarea"
+      placeholder="Course Description"
+      value={course.description}
+      rows={3}
+      className="mb-2"
+      onChange={(e) => setCourse({ ...course, description: e.target.value })}
+    />
+    <FormControl
+      key={`startDate-${formKey}`}
+      type="date"
+      placeholder="Start Date"
+      value={course.startDate}
+      className="mb-2"
+      onChange={(e) => setCourse({ ...course, startDate: e.target.value })}
+    />
+    <FormControl
+      key={`endDate-${formKey}`}
+      type="date"
+      placeholder="End Date"
+      value={course.endDate}
+      className="mb-2"
+      onChange={(e) => setCourse({ ...course, endDate: e.target.value })}
+    />
+    <FormControl
+      key={`img-${formKey}`}
+      placeholder="Course Image URL"
+      value={course.img}
+      className="mb-2"
+      onChange={(e) => setCourse({ ...course, img: e.target.value })}
+    />
+    <hr />
+  </>
+)}
       <h2 id="wd-dashboard-published">
         {showAllCourses 
           ? "All Courses" 
